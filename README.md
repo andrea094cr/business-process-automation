@@ -1,72 +1,15 @@
 # Business Process Automation Accelerator
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fbusiness-process-automation%2Fmain%2Ftemplates%2Foneclick.json)
-
-
-## New!! Integrate OpenAI into Cog Search!  January 31, 2023
-1. Use the "Deploy to Azure" for initial deployment.  Instructions are below.
-2. In Azure - Create an OpenAI instance (south central us has the most models).  Create three deployments:  text, searchdoc, searchquery.
-4. In the Azure Function that you created (the one that does not say Huggingface), add the following Application Settings and fill them in from the services that you just created.
-5. In the Configuration for the Static Web Application, add the Application Settings
-6. Create a new pipeline to OCR your pdfs.
-7. Drop in some documents in that pipeline.
-8. Ingest those PDF's into Cognitive Search 
-9. Go to Sample Search Application in the UI.  
-10. Toggle 'OpenAI Answers'
-```
-    "OPENAI_KEY" : "",
-    "OPENAI_ENDPOINT" : "https://yourservice.openai.azure.com/",
-    "OPENAI_DEPLOYMENT_TEXT" : "name of your text model deployment",
-```
-
-## Add OpenAI Completions To Your Pipeline!!  January 31, 2023
-1. Use the "Deploy to Azure" for initial deployment.  Instructions are below.
-2. In Azure - Create an OpenAI instance (south central us has the most models).  Create three deployments:  text, searchdoc, searchquery.
-4. In the Azure Function that you created (the one that does not say Huggingface), add the following Application Settings and fill them in from the services that you just created.
-5. Create a new pipeline for processing your documents or audio.  Example, pdf->ocr->ocrToText->openAIGeneric. 
-6. Drop in some documents in that pipeline.
-7. Go to OpenAI Viewer in the UI.  
-```
-    "OPENAI_KEY" : "",
-    "OPENAI_ENDPOINT" : "https://yourservice.openai.azure.com/",
-    "OPENAI_DEPLOYMENT_TEXT" : "name of your text model deployment",
-```
-
-## Vector Search is new!!  January 19, 2023
-
-1. Use the "Deploy to Azure" for initial deployment.  Instructions are below.
-2. In Azure - Create a Azure Enterprise Redis Cache.  It MUST be Enterprise to have the vector search capabilities.  Collect the endpoint and password.
-3. In Azure - Create an OpenAI instance (south central us has the most models).  Create three deployments:  text, searchdoc, searchquery.
-4. In the Azure Function that you created (the one that does not say Huggingface), add the following Application Settings and fill them in from the services that you just created.
-5. Create a new pipeline for processing your documents or audio.  Example, pdf->ocr->ocrToText->openAiEmbeddings
-6. Drop in some documents in that pipeline.
-7. Go to Vector Search Application in the UI.  
-```
-    "OPENAI_KEY" : "",
-    "OPENAI_REGION" : "southcentralus",
-    "OPENAI_ENDPOINT" : "https://yourservice.openai.azure.com/",
-    "OPENAI_DEPLOYMENT_TEXT" : "bpatesttext",
-    "OPENAI_DEPLOYMENT_SEARCH_DOC" : "bpatestsearchdoc",
-    "OPENAI_DEPLOYMENT_SEARCH_QUERY" : "bpatestsearchquery",
-    "REDIS_URL" : "rediss://yourService.eastus.redisenterprise.cache.azure.net:10000",
-    "REDIS_PW" : "",
-    "STORE_IN_REDIS" : "true",
-```
-
-## Deploy Button is new!!  January 15, 2022
-
-1.  Fork this to your git repo
-2.  Get a 'workflow' level, classic, personal token from you Github Account.  Instructions for this are lower in the readme.
-3.  You need to name your project something unique.  It is highly recommended to avoid using dashes or even uppercase letters.  Stick to lowercase alpha-numerics.
-4.  Click the "Deploy to Azure" button and fill in only the first three parameters:  Project Name, Token, Forked Github URL.
-5.  The first time, it is likely that you will have a problem installing the Cognitive Services Multi-Service instance.  It requires that you agree to terms of use and you cannot do this within a template.  The solution is to create an instance, and delete it.  You will then be able to run the full template.  Instructions for creating this are lower in the readme.
-
-
 ## Overview
 
 This accelerator provides a no code Studio for users to quickly build complex, multi-stage AI pipelines across multiple Azure AI and ML Services.  Users can select, and stack, AI/ML Services from across Azure Cognitive Services (Speech, Language, Form Recognizer, ReadAPI), Azure Machine Learning, and even Hugging Face state-of-the-art models, into a **single**, fully integrated **pipeline**. Integration between services is automated by BPA, and once deployed, a web app is created. This customizable UI&ast; provides and drag-n-drop interface for end users to build multi service pipelines. Finally, the user-created pipeline is triggered as soon as the first input file(s) are uploaded, storing the results in a CosmosDB.
 
-And, optionally, the end-user can add a Cognitive Search Index, indexing each the output at each of stage of the pipeline, across all uploaded files. Index creation is handled entirely by the accelerator, where the end-user can access the index via their newly created Cognitive Search Index resource
+And, optionally, the end-user can add a Cognitive Search Index, indexing each the output at each of stage of the pipeline, across all uploaded files. Index creation is handled entirely by the accelerator, where the end-user can access the index via their newly created Cognitive Search Index resource.
+
+#### OpenAI has been integrated to be added to document pipelines and also to be exploited for enhanced search capabilities.
+1. Summarize a document
+2. Process document text with a customized prompt.  Designed to easily migrate prompt configurations from the Playground to your document pipeline.
+3. Integration of OpenAI Completion API to search results to generate a more specific answer.
   
 <br/><br/> 
 ![](images/high-level-architecture.png)  
@@ -74,7 +17,40 @@ And, optionally, the end-user can add a Cognitive Search Index, indexing each th
 <br/><br/>
   
 &ast;*Note*: [Azure Static Web Apps](https://docs.microsoft.com/azure/static-web-apps/overview) allows you to easily build [React](https://reactjs.org/) apps in minutes. Use this repo with the [React quickstart](https://docs.microsoft.com/azure/static-web-apps/getting-started?tabs=react) to build and customize a new static site and automate the deployment of a functional, and customizable, POC for text and language processing.  
+
+
+## Instructional Videos
+- [Deployment in Azure](https://bpasource.blob.core.windows.net/source/VideoSeries/Deploy.mp4?sv=2020-04-08&st=2023-03-10T15%3A54%3A39Z&se=2026-06-12T14%3A54%3A00Z&sr=b&sp=r&sig=chMcBfD%2Foc2E05Od8xNkbWprWxHIIc7ApDbVazk2%2BO8%3D)
+- [Create Your First Pipeline](https://bpasource.blob.core.windows.net/source/VideoSeries/first%20pipeline-20230310_122701-Meeting%20Recording.mp4?sv=2020-04-08&st=2023-03-10T17%3A51%3A01Z&se=2025-01-16T17%3A51%3A00Z&sr=b&sp=r&sig=Jz8PdJAWkLXnN3QqxEnXogRHtN55FC8emHZoic9TGEE%3D)
  
+
+
+##  Responsible AI Check Required On First Deployment
+Ensure that you have **accepted terms and conditions for Responsible AI**:  
+You must initiate the creation of a "Cognitive services multi-service account" from the Azure portal to review and acknowledge the terms and conditions by checking the checkmark.
+Once accepted, you can create subsequent resources using any deployment tool (SDK, CLI, or ARM template, etc) under the same Azure subscription.
+
+### Without OpenAI
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fbusiness-process-automation%2Fmain%2Ftemplates%2Foneclick.json)
+
+### With OpenAI
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fbusiness-process-automation%2Fmain%2Ftemplates%2Foneclickoai.json)
+
+### With OpenAI and Redis Enterprise (check pricing) for Vector Search
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fbusiness-process-automation%2Fmain%2Ftemplates%2Foneclickoairedis.json)
+
+
+### Deploy to Azure Instructions
+1. Get a Workflow Level Token:  [Create AND save personal access token](#3-create-and-save-personal-access-token)
+2. Fork the repository to a git account of which you are the Admin.
+3. Click on the "Deploy to Azure" Button.  If you do not have access to OpenAI, choose the first one.
+4. Only the Resource Group, Repo Token (from #2), and Forked Git Repo Url are needed.  The remaining parameters are filled in for you.
+
+Latest Backend : https://bpasource.blob.core.windows.net/source/backendv015.zip?sv=2020-04-08&st=2023-03-03T21%3A47%3A55Z&se=2023-11-21T21%3A47%3A00Z&sr=b&sp=r&sig=3rXVZCv%2BWvQ3TnMq33wsvQr4Gxvayt7%2FA3g%2BgQduKHw%3D
+
+
+# Deploy instructions below are only if you are doing development!!  If you are not adding features to BPA, use the "Deploy to Azure" buttons above.
+
 ---
 
 ## Contents  
@@ -216,7 +192,7 @@ To confirm/enable:
       - Once Microsoft.DocumentDB is found, check if the status is marked as "Registered". If marked as "NotRegistered", Select "Register"  
       **Note**: *This process may take several seconds/minutes, be sure to refresh the entire browser periodically*
 4. Ensure that you have **accepted terms and conditions for Responsible AI**:  
-You must create your first Face, Language service, or Computer Vision resources from the Azure portal to review and acknowledge the terms and conditions. You can do so here: [Quickstart: Create a Cognitive Services resource using the Azure portal](https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account?tabs=multiservice%2Cwindows).  
+You must initiate the creation of a "Cognitive services multi-service account" from the Azure portal to review and acknowledge the terms and conditions. You can do so here: [Quickstart: Create a Cognitive Services resource using the Azure portal](https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account?tabs=multiservice%2Cwindows).  
 Once accepted, you can create subsequent resources using any deployment tool (SDK, CLI, or ARM template, etc) under the same Azure subscription.
   
   ---

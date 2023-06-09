@@ -47,7 +47,8 @@ export class OpenAI {
             filename: input.filename,
             pipeline: input.pipeline,
             aggregatedResults: results,
-            resultsIndexes: input.resultsIndexes
+            resultsIndexes: input.resultsIndexes,
+            id: input.id
         }
 
         return result
@@ -73,9 +74,14 @@ export class OpenAI {
         let openAiInput = JSON.parse(prompt)
         openAiInput.prompt = openAiInput.prompt.replace("${document}", truncatedString)
 
-        const out = await axios.post(url, openAiInput, config)
+        let out = await axios.post(url, openAiInput, config)
+        out.data.sourcePrompt = openAiInput.prompt
         const results = input.aggregatedResults
-        results["openaiGeneric"] = out.data
+        if(results?.openaiGeneric){
+            results["openaiGeneric"].push(out.data)
+        } else{
+            results["openaiGeneric"] = [out.data]
+        }
         input.resultsIndexes.push({ index: index, name: "openaiGeneric", type: "openaiGeneric" })
         const result: BpaServiceObject = {
             data: out.data,
@@ -85,7 +91,8 @@ export class OpenAI {
             filename: input.filename,
             pipeline: input.pipeline,
             aggregatedResults: results,
-            resultsIndexes: input.resultsIndexes
+            resultsIndexes: input.resultsIndexes,
+            id: input.id
         }
         return result
 
@@ -166,7 +173,8 @@ export class OpenAI {
             filename: input.filename,
             pipeline: input.pipeline,
             aggregatedResults: results,
-            resultsIndexes: input.resultsIndexes
+            resultsIndexes: input.resultsIndexes,
+            id: input.id
         }
         return result
 

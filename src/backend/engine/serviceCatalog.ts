@@ -1,4 +1,4 @@
-import { CosmosDB } from "../services/db"
+import { BlobDB } from "../services/db"
 import { LanguageStudio } from "../services/language"
 import { Speech } from '../services/speech'
 import { BpaService } from "./types"
@@ -18,13 +18,16 @@ import { TableParser } from "../services/tableParser"
 import { OpenAI } from "../services/openai"
 import { SpliceDocument } from "../services/spliceDocument"
 import { RedactPdf } from "../services/redactPdf"
+import { TextSegmentation } from "../services/textSegmentation"
+import { SplitPdf } from "../services/splitPdf"
 
 const changeOutput = new ChangeOutput()
 const blob = new BlobStorage(process.env.AzureWebJobsStorage, process.env.BLOB_STORAGE_CONTAINER)
-const cosmosDb = new CosmosDB(process.env.COSMOSDB_CONNECTION_STRING,process.env.COSMOSDB_DB_NAME, process.env.COSMOSDB_CONTAINER_NAME)
+//const cosmosDb = new CosmosDB(process.env.COSMOSDB_CONNECTION_STRING,process.env.COSMOSDB_DB_NAME, process.env.COSMOSDB_CONTAINER_NAME)
+const blobDb = new BlobDB(process.env.AzureWebJobsStorage,"db", process.env.BLOB_STORAGE_CONTAINER)
 const language = new LanguageStudio(process.env.LANGUAGE_STUDIO_PREBUILT_ENDPOINT, process.env.LANGUAGE_STUDIO_PREBUILT_APIKEY)
-const speech = new Speech(process.env.SPEECH_SUB_KEY,process.env.SPEECH_SUB_REGION,process.env.AzureWebJobsStorage, process.env.BLOB_STORAGE_CONTAINER,process.env.COSMOSDB_CONNECTION_STRING,process.env.COSMOSDB_DB_NAME, process.env.COSMOSDB_CONTAINER_NAME)
-const formrec = new FormRec(process.env.FORMREC_ENDPOINT, process.env.FORMREC_APIKEY, process.env.FORMREC_CONTAINER_READ_ENDPOINT)
+const speech = new Speech(process.env.SPEECH_SUB_KEY,process.env.SPEECH_SUB_REGION,process.env.AzureWebJobsStorage, process.env.BLOB_STORAGE_CONTAINER)
+const formrec = new FormRec(process.env.FORMREC_ENDPOINT, process.env.FORMREC_APIKEY, blob, process.env.FORMREC_CONTAINER_READ_ENDPOINT)
 const translate = new Translate(process.env.TRANSLATE_ENDPOINT, process.env.TRANSLATE_APIKEY, process.env.TRANSLATE_REGION)
 const huggingface = new HuggingFace(process.env.HUGGINGFACE_ENDPOINT)
 const preprocess = new Preprocess(process.env.HUGGINGFACE_ENDPOINT)
@@ -34,13 +37,56 @@ const test = new Test()
 const contentModerator = new ContentModerator(process.env.CONTENT_MODERATOR_ENDPOINT,process.env.CONTENT_MODERATOR_KEY)
 const xml = new Xml()
 const videoIndexer = new VideoIndexer(process.env.AzureWebJobsStorage, process.env.BLOB_STORAGE_CONTAINER)
-const tableParser = new TableParser(cosmosDb)
+const tableParser = new TableParser(blobDb)
 const openaiText = new OpenAI(process.env.OPENAI_ENDPOINT, process.env.OPENAI_KEY, process.env.OPENAI_DEPLOYMENT_TEXT)
 const openaiSearchDoc = new OpenAI(process.env.OPENAI_ENDPOINT, process.env.OPENAI_KEY, process.env.OPENAI_DEPLOYMENT_SEARCH_DOC)
 const splicedDocument = new SpliceDocument(blob)
 const blobTranslation = new BlobStorage(process.env.AzureWebJobsStorage, "translated-documents")
 const redactPdf = new RedactPdf(blob, blobTranslation)
+const textSegmentation = new TextSegmentation()
+const splitPdf = new SplitPdf()
 
+const splitPdfService : BpaService = {
+    bpaServiceId : "abc123",
+    inputTypes: ["pdf"],
+    outputTypes: ["splitPdf"],
+    name: "splitPdf",
+    process: splitPdf.process,
+    serviceSpecificConfig: {
+        
+    },
+    serviceSpecificConfigDefaults: {
+
+    }
+}
+
+const textSegmentationByPageService : BpaService = {
+    bpaServiceId : "abc123",
+    inputTypes: ["ocr"],
+    outputTypes: ["textSegmentation"],
+    name: "textSegmentationByPage",
+    process: textSegmentation.processByPage,
+    serviceSpecificConfig: {
+        
+    },
+    serviceSpecificConfigDefaults: {
+
+    }
+}
+
+const textSegmentationService : BpaService = {
+    bpaServiceId : "abc123",
+    inputTypes: ["ocr","text","txt"],
+    outputTypes: ["textSegmentation"],
+    name: "textSegmentation",
+    process: textSegmentation.process,
+    serviceSpecificConfig: {
+        
+    },
+    serviceSpecificConfigDefaults: {
+
+    }
+}
 
 const redactPdfService : BpaService = {
     bpaServiceId : "abc123",
@@ -72,7 +118,7 @@ const spliceDocumentService : BpaService = {
 
 const openaiEmbeddingsService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["openaiEmbeddings"],
     name: "openaiEmbeddings",
     process: openaiSearchDoc.processEmbeddings,
@@ -86,7 +132,7 @@ const openaiEmbeddingsService : BpaService = {
 
 const openaiGenericService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["openaiGeneric"],
     name: "openaiGeneric",
     process: openaiText.processGeneric,
@@ -100,7 +146,7 @@ const openaiGenericService : BpaService = {
 
 const openaiSummarizeService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["openaiSummarize"],
     name: "openaiSummarize",
     process: openaiText.process,
@@ -209,7 +255,7 @@ const contentModeratorImageService : BpaService = {
 
 const contentModeratorTextService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["contentModeratorText"],
     name: "contentModeratorText",
     process: contentModerator.text,
@@ -223,7 +269,7 @@ const contentModeratorTextService : BpaService = {
 
 const toTxtService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["text"],
     name: "totxt",
     process: blob.toTxt,
@@ -261,7 +307,7 @@ const changeOutputService : BpaService = {
 
 const automlNerService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["automlNer"],
     name: "automlNer",
     process: automlNer.process,
@@ -275,7 +321,7 @@ const automlNerService : BpaService = {
 
 const translateService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["text"],
     name: "translate",
     process: translate.translate,
@@ -530,13 +576,12 @@ const customFormRec : BpaService = {
     }
 }
 
-
-const sttService : BpaService = {
+const sttToTextService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["wav","mp3"],
+    inputTypes: ["stt"],
     outputTypes: ["text"],
-    name: "stt",
-    process: speech.process,
+    name: "sttToText",
+    process: speech.sttToText,
     serviceSpecificConfig: {
 
     },
@@ -545,10 +590,25 @@ const sttService : BpaService = {
     }
 }
 
+
+// const sttService : BpaService = {
+//     bpaServiceId : "abc123",
+//     inputTypes: ["wav","mp3"],
+//     outputTypes: ["stt"],
+//     name: "stt",
+//     process: speech.process,
+//     serviceSpecificConfig: {
+
+//     },
+//     serviceSpecificConfigDefaults: {
+
+//     }
+// }
+
 const sttBatchService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["wav","mp3"],
-    outputTypes: ["text"],
+    inputTypes: ["wav","mp3","mp4"],
+    outputTypes: ["stt"],
     name: "sttBatch",
     process: speech.processBatch,
     serviceSpecificConfig: {
@@ -561,7 +621,9 @@ const sttBatchService : BpaService = {
 
 const ocrContainerBatchService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["pdf","jpg"],
+    inputTypes: ["pdf",
+    "tiff","gif","jpg","jpeg",
+    "doc","docx","ppt","pptx"],
     outputTypes: ["ocrContainer"],
     name: "ocrContainerBatch",
     process: formrec.readContainerAsync,
@@ -575,7 +637,9 @@ const ocrContainerBatchService : BpaService = {
 
 const ocrContainerService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["pdf","jpg"],
+    inputTypes: ["pdf",
+    "tiff","gif","jpg","jpeg",
+    "doc","docx","ppt","pptx"],
     outputTypes: ["ocrContainer"],
     name: "ocrContainer",
     process: formrec.readContainer,
@@ -589,7 +653,9 @@ const ocrContainerService : BpaService = {
 
 const ocrService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["pdf","jpg"],
+    inputTypes: ["pdf",
+    "tiff","gif","jpg","jpeg",
+    "doc","docx","ppt","pptx"],
     outputTypes: ["ocr"],
     name: "ocr",
     process: formrec.readDocument,
@@ -603,7 +669,9 @@ const ocrService : BpaService = {
 
 const ocrBatchService : BpaService = {
     bpaServiceId : "abc123",
-    inputTypes: ["pdf","jpg"],
+    inputTypes: ["pdf",
+    "tiff","gif","jpg","jpeg",
+    "doc","docx","ppt","pptx"],
     outputTypes: ["ocr"],
     name: "ocrBatch",
     process: formrec.readDocumentAsync,
@@ -630,7 +698,7 @@ const summaryToText : BpaService = {
 }
 
 const extractSummaryBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["extractSummary"],
     name: "extractSummaryBatch",
     bpaServiceId: "abc123",
@@ -644,7 +712,7 @@ const extractSummaryBatch : BpaService = {
 }
 
 const analyzeSentimentBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["analyzeSentiment"],
     name: "analyzeSentimentBatch",
     bpaServiceId: "abc123",
@@ -658,7 +726,7 @@ const analyzeSentimentBatch : BpaService = {
 }
 
 const extractKeyPhrasesBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["extractKeyPhrases"],
     name: "extractKeyPhrasesBatch",
     bpaServiceId: "abc123",
@@ -671,7 +739,7 @@ const extractKeyPhrasesBatch : BpaService = {
     }
 }
 const multiCategoryClassifyBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["multiCategoryClassify"],
     name: "multiCategoryClassifyBatch",
     bpaServiceId: "abc123",
@@ -684,7 +752,7 @@ const multiCategoryClassifyBatch : BpaService = {
     }
 }
 const recognizeCustomEntitiesBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizeCustomEntities"],
     name: "recognizeCustomEntitiesBatch",
     bpaServiceId: "abc123",
@@ -697,7 +765,7 @@ const recognizeCustomEntitiesBatch : BpaService = {
     }
 }
 const recognizeEntitiesBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizeEntities"],
     name: "recognizeEntitiesBatch",
     bpaServiceId: "abc123",
@@ -711,7 +779,7 @@ const recognizeEntitiesBatch : BpaService = {
 }
 
 const recognizeLinkedEntitiesBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizeLinkedEntities"],
     name: "recognizeLinkedEntitiesBatch",
     bpaServiceId: "abc123",
@@ -725,7 +793,7 @@ const recognizeLinkedEntitiesBatch : BpaService = {
 }
 
 const recognizePiiEntitiesBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizePiiEntities"],
     name: "recognizePiiEntitiesBatch",
     bpaServiceId: "abc123",
@@ -739,7 +807,7 @@ const recognizePiiEntitiesBatch : BpaService = {
 }
 
 const singleCategoryClassifyBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["singleCategoryClassify"],
     name: "singleCategoryClassifyBatch",
     bpaServiceId: "abc123",
@@ -753,7 +821,7 @@ const singleCategoryClassifyBatch : BpaService = {
 }
 
 const healthCareServiceBatch : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["healthCareResults"],
     name: "healthCareBatch",
     bpaServiceId: "abc123",
@@ -767,7 +835,7 @@ const healthCareServiceBatch : BpaService = {
 }
 
 const extractSummary : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["extractSummary"],
     name: "extractSummary",
     bpaServiceId: "abc123",
@@ -781,7 +849,7 @@ const extractSummary : BpaService = {
 }
 
 const analyzeSentiment : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["analyzeSentiment"],
     name: "analyzeSentiment",
     bpaServiceId: "abc123",
@@ -795,7 +863,7 @@ const analyzeSentiment : BpaService = {
 }
 
 const extractKeyPhrases : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["extractKeyPhrases"],
     name: "extractKeyPhrases",
     bpaServiceId: "abc123",
@@ -808,7 +876,7 @@ const extractKeyPhrases : BpaService = {
     }
 }
 const multiCategoryClassify : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["multiCategoryClassify"],
     name: "multiCategoryClassify",
     bpaServiceId: "abc123",
@@ -821,7 +889,7 @@ const multiCategoryClassify : BpaService = {
     }
 }
 const recognizeCustomEntities : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizeCustomEntities"],
     name: "recognizeCustomEntities",
     bpaServiceId: "abc123",
@@ -834,7 +902,7 @@ const recognizeCustomEntities : BpaService = {
     }
 }
 const recognizeEntities : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizeEntities"],
     name: "recognizeEntities",
     bpaServiceId: "abc123",
@@ -848,7 +916,7 @@ const recognizeEntities : BpaService = {
 }
 
 const recognizeLinkedEntities : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizeLinkedEntities"],
     name: "recognizeLinkedEntities",
     bpaServiceId: "abc123",
@@ -862,7 +930,7 @@ const recognizeLinkedEntities : BpaService = {
 }
 
 const recognizePiiEntities : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["recognizePiiEntities"],
     name: "recognizePiiEntities",
     bpaServiceId: "abc123",
@@ -876,7 +944,7 @@ const recognizePiiEntities : BpaService = {
 }
 
 const singleCategoryClassify : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["singleCategoryClassify"],
     name: "singleCategoryClassify",
     bpaServiceId: "abc123",
@@ -890,7 +958,7 @@ const singleCategoryClassify : BpaService = {
 }
 
 const healthCareService : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["healthCareResults"],
     name: "healthCare",
     bpaServiceId: "abc123",
@@ -904,7 +972,7 @@ const healthCareService : BpaService = {
 }
 
 const preprocessService : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["preprocess"],
     name: "preprocess",
     bpaServiceId: "abc123",
@@ -918,7 +986,7 @@ const preprocessService : BpaService = {
 }
 
 const huggingFaceNER : BpaService = {
-    inputTypes: ["text"],
+    inputTypes: ["text","txt"],
     outputTypes: ["huggingFaceNER"],
     name: "huggingFaceNER",
     bpaServiceId: "abc123",
@@ -991,7 +1059,7 @@ export const serviceCatalog = {
     "recognizePiiEntitiesBatch" : recognizePiiEntitiesBatch,
     "singleCategoryClassifyBatch" : singleCategoryClassifyBatch,
     "summaryToText" : summaryToText,
-    "sttService" : sttService,
+    "sttToText" : sttToTextService,
     "sttBatchService" : sttBatchService,
     "translate" : translateService,
     "layout" : layout,
@@ -1010,7 +1078,6 @@ export const serviceCatalog = {
     "prebuiltReceiptBatch" : prebuiltReceiptBatch,
     "prebuiltTaxW2Batch" : prebuiltTaxW2Batch,
     "customFormRecBatch" : customFormRecBatch,
-    
     "huggingFaceNER" : huggingFaceNER,
     "preprocess" : preprocessService,
     "testService" : testService,
@@ -1027,6 +1094,9 @@ export const serviceCatalog = {
     "tableParser" : tableParserService,
     "openaiSummarize" : openaiSummarizeService,
     "openaiGeneric" : openaiGenericService,
-    "openaiEmbeddings" : openaiEmbeddingsService
+    "openaiEmbeddings" : openaiEmbeddingsService,
+    "textSegmentation" : textSegmentationService,
+    "textSegmentationByPage" : textSegmentationByPageService,
+    "splitPdf" : splitPdfService
 }
 
